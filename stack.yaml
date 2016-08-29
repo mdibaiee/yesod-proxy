@@ -1,0 +1,21 @@
+resolver: lts-6.13
+packages:
+- '.'
+extra-deps:
+  - yesod-1.4.3
+  - wai-3.2.1.1
+  - http-client-0.4.31
+  - http-client-tls-0.2.4.1
+  - http-conduit-2.1.11
+  - bytestring-0.10.8.1
+  - blaze-builder-0.4.0.2
+  - yesod-core-1.4.23
+  - http-types-0.9.1
+  - network-2.6.3.1
+  - conduit-1.2.7
+  - wai-conduit-3.0.0.3
+  - resourcet-1.1.7.5
+  - threads-0.5.1.4
+  - binary-0.7.5.0
+flags: {}
+extra-package-dbs: []
