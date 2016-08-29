@@ -68,7 +68,7 @@ connectProxyR :: HandlerT App IO TypedContent
 connectProxyR = do
   manager <- liftIO $ H.newManager tlsManagerSettings
   request <- waiRequest
-  let requestStream = sourceRequestBody request
+  -- let requestStream = sourceRequestBody request
 
   let host = fromJust $ requestHeaderHost request
       (hostname, port) = span (/= ':') (BSC.unpack host)
@@ -76,6 +76,19 @@ connectProxyR = do
   targetSocket <- liftIO $ openSocket hostname (tail port)
 
   sendWaiResponse $ responseStream ok200 [] $ \write flush -> do
+    (wid, wwait) <- liftIO $ T.forkIO $
+      do
+        let loop = do
+              -- maybeInput <- requestStream C.$$ C.await
+              input <- liftIO $ requestBody request
+
+              -- when (isJust maybeInput) $
+              when (not $ BS.null input) $
+                do
+                  -- let input = fromJust maybeInput
+                  liftIO $ SB.sendAll targetSocket input
+                  loop
+        loop
     (rid, rwait) <- liftIO $ T.forkIO $
       do
         let loop = do
@@ -86,17 +99,6 @@ connectProxyR = do
                 do
                   write $ fromByteString output
                   flush
-                  loop
-        loop
-    (wid, wwait) <- liftIO $ T.forkIO $
-      do
-        let loop = do
-              maybeInput <- requestStream C.$$ C.await
-
-              when (isJust maybeInput) $
-                do
-                  let input = fromJust maybeInput
-                  liftIO $ SB.sendAll targetSocket input
                   loop
         loop
 
