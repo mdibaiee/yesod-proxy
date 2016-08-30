@@ -25,6 +25,7 @@ import System.IO
 import Control.Monad (when)
 import qualified Control.Concurrent.Thread as T
 import qualified Data.Conduit as C
+import Control.Monad.Trans.Control (liftBaseDiscard)
 
 data App = App
 
@@ -89,14 +90,17 @@ connectProxyR = do
                   liftIO $ SB.sendAll targetSocket input
                   loop
         loop
-    (rid, rwait) <- liftIO $ T.forkIO $
+    (rid, rwait) <- liftBaseDiscard $ T.forkIO $
       do
         let loop = do
               output <- liftIO $ SB.recv targetSocket (2^11)
               liftIO $ putStrLn $ "SB.recv: " ++ BSC.unpack output
 
               when (not $ BS.null output) $
-                liftIO $ sendChunkBS output >> sendFlush >> loop
+                do
+                  sendChunkBS output
+                  sendFlush
+                  loop
         loop
 
     sendFlush
