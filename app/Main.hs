@@ -75,38 +75,38 @@ connectProxyR = do
 
   targetSocket <- liftIO $ openSocket hostname (tail port)
 
-  sendWaiResponse $ responseStream ok200 [] $ \write flush -> do
+  respondSource "" $ do
+    sendFlush
+
     (wid, wwait) <- liftIO $ T.forkIO $
       do
         let loop = do
-              -- maybeInput <- requestStream C.$$ C.await
               input <- liftIO $ requestBody request
+              liftIO $ putStrLn $ "requestBody: " ++ BSC.unpack input
 
-              -- when (isJust maybeInput) $
               when (not $ BS.null input) $
                 do
-                  -- let input = fromJust maybeInput
                   liftIO $ SB.sendAll targetSocket input
                   loop
         loop
     (rid, rwait) <- liftIO $ T.forkIO $
       do
         let loop = do
-              output <- liftIO $ SB.recv targetSocket 128
-              liftIO $ putStrLn $ "output: " ++ show output
+              output <- liftIO $ SB.recv targetSocket (2^11)
+              liftIO $ putStrLn $ "SB.recv: " ++ BSC.unpack output
 
               when (not $ BS.null output) $
-                do
-                  write $ fromByteString output
-                  flush
-                  loop
+                liftIO $ sendChunkBS output >> sendFlush >> loop
         loop
 
-    -- flush
+    sendFlush
+    liftIO $ print "OK sent"
 
-    rwait
-    wwait
+    liftIO rwait
+    liftIO wwait
+    liftIO $ print "end"
     return ()
+
 
 main = warp 3000 App
 
