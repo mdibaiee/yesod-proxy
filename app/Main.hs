@@ -90,7 +90,8 @@ connectProxyR = do
                   liftIO $ SB.sendAll targetSocket input
                   loop
         loop
-    (rid, rwait) <- liftBaseDiscard $ T.forkIO $
+
+    (rid, rwait) <- liftIO $ T.forkIO $
       do
         let loop = do
               output <- liftIO $ SB.recv targetSocket (2^11)
@@ -110,6 +111,9 @@ connectProxyR = do
     liftIO wwait
     liftIO $ print "end"
     return ()
+  where
+    sampleIO :: IO ()
+    sampleIO = return mempty
 
 
 main = warp 3000 App
